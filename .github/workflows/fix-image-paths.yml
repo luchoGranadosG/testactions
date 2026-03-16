@@ -1,5 +1,6 @@
 name: Fix image paths for email templates
 
+# El workflow se dispara cada vez que se hace un push que contenga cambios en archivos HTML
 on:
   push:
     paths:
@@ -8,23 +9,52 @@ on:
 jobs:
   fix-paths:
     runs-on: ubuntu-latest
+    
+    # Otorgamos permisos de escritura para que el bot pueda hacer el commit de vuelta al repo
     permissions:
-      contents: write # Necesario para que el bot pueda escribir en el repo
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
+      contents: write
 
-      - name: Replace paths
+    steps:
+      # 1. Descargamos el código del repositorio
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # Traemos todo el historial para evitar problemas de rebase
+
+      # 2. Ejecutamos el script de reemplazo de rutas
+      - name: Replace local paths with GitHub Pages URLs
         run: |
+          # Definimos la URL base de tu proyecto en GitHub Pages
           BASE_URL="https://luchogranadosg.github.io/testactions"
+          
+          # Buscamos todos los archivos .html, excluyendo la carpeta interna de .git
           find . -name "*.html" -not -path "./.git/*" | while read file; do
-            sed -i 's|src="\(\.\./\)\+assets/images/|src="'"$BASE_URL"'/assets/images/|g' "$file"
-            sed -i 's|src='"'"'\(\.\./\)\+assets/images/|src='"'"''"$BASE_URL"'/assets/images/|g' "$file"
+            echo "Procesando archivo: $file"
+            
+            # REGLAS DE REEMPLAZO (Idempotentes: no afectan rutas ya convertidas)
+            # El patrón [./]* detecta: "assets/", "./assets/", "../assets/", "../../assets/", etc.
+            
+            # Reemplazo para atributo SRC (imágenes) con comillas dobles y simples
+            sed -i "s|src=\"[./]*assets/|src=\"$BASE_URL/assets/|g" "$file"
+            sed -i "s|src='[./]*assets/|src='$BASE_URL/assets/|g" "$file"
+            
+            # Reemplazo para atributo HREF (links/archivos) con comillas dobles y simples
+            sed -i "s|href=\"[./]*assets/|href=\"$BASE_URL/assets/|g" "$file"
+            sed -i "s|href='[./]*assets/|href='$BASE_URL/assets/|g" "$file"
           done
 
+      # 3. Detectamos si hubo cambios y hacemos el commit automáticamente
       - name: Commit and Push changes
         uses: stefanzweifel/git-auto-commit-action@v5
         with:
-          commit_message: "chore: replace local image paths with GitHub Pages URLs"
+          # Mensaje descriptivo para el historial de Git
+          commit_message: "github action: auto-fix asset paths for GitHub Pages [skip ci]"
+          
+          # Especificamos la rama (main por defecto)
           branch: main
+          
+          # Configuramos el nombre del autor del commit
+          commit_author_name: github-actions[bot]
+          commit_author_email: github-actions[bot]@users.noreply.github.com
+          
+          # Esta acción solo hará commit si el script de arriba realmente modificó algún archivo
