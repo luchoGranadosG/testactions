@@ -13,11 +13,11 @@ jobs:
 
       - name: Replace local paths with GitHub Pages URLs
         run: |
-          BASE_URL="https://luchoGranadosG.github.io/testactions"
+          BASE_URL="https://luchogranadosg.github.io/testactions"
           
           find . -name "*.html" -not -path "./.git/*" | while read file; do
-            sed -i 's|src="\.\./\(\.\./\)*assets/|src="'"$BASE_URL"'/assets/|g' "$file"
-            sed -i "s|src='\.\.\/\(\.\.\/\)*assets\/|src='$BASE_URL/assets/|g" "$file"
+            sed -i 's|src="\(\.\./\)\+assets/images/|src="'"$BASE_URL"'/assets/images/|g' "$file"
+            sed -i 's|src='"'"'\(\.\./\)\+assets/images/|src='"'"''"$BASE_URL"'/assets/images/|g' "$file"
           done
 
       - name: Commit fixed paths
