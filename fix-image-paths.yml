@@ -1,0 +1,28 @@
+name: Fix image paths for email templates
+
+on:
+  push:
+    paths:
+      - '**.html'
+
+jobs:
+  fix-paths:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Replace local paths with GitHub Pages URLs
+        run: |
+          BASE_URL="https://luchoGranadosG.github.io/testactions"
+          
+          find . -name "*.html" -not -path "./.git/*" | while read file; do
+            sed -i 's|src="\.\./\(\.\./\)*assets/|src="'"$BASE_URL"'/assets/|g' "$file"
+            sed -i "s|src='\.\.\/\(\.\.\/\)*assets\/|src='$BASE_URL/assets/|g" "$file"
+          done
+
+      - name: Commit fixed paths
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git diff --quiet || (git add -A && git commit -m "chore: replace local image paths with GitHub Pages URLs")
+          git push
