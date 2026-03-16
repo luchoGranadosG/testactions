@@ -14,8 +14,11 @@ jobs:
           fetch-depth: 0
           token: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Replace local paths with GitHub Pages URLs
+      - name: Commit fixed paths
         run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          
           BASE_URL="https://luchogranadosg.github.io/testactions"
           
           find . -name "*.html" -not -path "./.git/*" | while read file; do
@@ -23,10 +26,6 @@ jobs:
             sed -i 's|src='"'"'\(\.\./\)\+assets/images/|src='"'"''"$BASE_URL"'/assets/images/|g' "$file"
           done
 
-      - name: Commit fixed paths
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
           git pull origin main --rebase
-          git diff --quiet || (git add -A && git commit -m "chore: replace local image paths with GitHub Pages URLs")
+          git diff --quiet && git diff --staged --quiet || (git add -A && git commit -m "chore: replace local image paths with GitHub Pages URLs")
           git push origin main
