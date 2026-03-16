@@ -24,5 +24,6 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
+          git pull --rebase
           git diff --quiet || (git add -A && git commit -m "chore: replace local image paths with GitHub Pages URLs")
           git push
